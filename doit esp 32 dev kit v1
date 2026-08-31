@@ -1,0 +1,68 @@
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+#include <ESP32Servo.h>
+
+#define SERVO_PIN 18
+
+Servo servo;
+BLEScan *scan;
+
+class Callback : public BLEAdvertisedDeviceCallbacks {
+  void onResult(BLEAdvertisedDevice device) {
+
+    if (!device.haveManufacturerData()) {
+      return;
+    }
+
+    String data = device.getManufacturerData();
+
+    // ON = 97 03 01 00 A2 4F 4E
+    if (data.length() >= 7 &&
+        (uint8_t)data[0] == 0x97 &&
+        (uint8_t)data[1] == 0x03 &&
+        (uint8_t)data[2] == 0x01 &&
+        (uint8_t)data[5] == 0x4F &&
+        (uint8_t)data[6] == 0x4E) {
+
+      Serial.println(">>> ON RECEBIDO <<<");
+      servo.write(90);
+    }
+
+    // OFF = 97 03 01 00 A3 4F 46 46
+    if (data.length() >= 8 &&
+        (uint8_t)data[0] == 0x97 &&
+        (uint8_t)data[1] == 0x03 &&
+        (uint8_t)data[2] == 0x01 &&
+        (uint8_t)data[5] == 0x4F &&
+        (uint8_t)data[6] == 0x46 &&
+        (uint8_t)data[7] == 0x46) {
+
+      Serial.println(">>> OFF RECEBIDO <<<");
+      servo.write(0);
+    }
+  }
+};
+
+void setup() {
+  Serial.begin(115200);
+
+  Serial.println("=== LUIZ ESP32 ===");
+
+  servo.attach(SERVO_PIN);
+  servo.write(0);
+
+  BLEDevice::init("LUIZ");
+
+  scan = BLEDevice::getScan();
+  scan->setAdvertisedDeviceCallbacks(new Callback());
+  scan->setActiveScan(true);
+
+  Serial.println("Aguardando LETICIA...");
+}
+
+void loop() {
+  scan->start(1, false);
+  scan->clearResults();
+  delay(100);
+}
