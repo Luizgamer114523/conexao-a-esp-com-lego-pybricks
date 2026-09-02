@@ -47,7 +47,7 @@ class Callback : public BLEAdvertisedDeviceCallbacks {
 void setup() {
   Serial.begin(115200);
 
-  Serial.println("=== LUIZ ESP32 ===");
+  Serial.println("===  ESP32 ===");
 
   servo.attach(SERVO_PIN);
   servo.write(0);
@@ -58,7 +58,7 @@ void setup() {
   scan->setAdvertisedDeviceCallbacks(new Callback());
   scan->setActiveScan(true);
 
-  Serial.println("Aguardando LETICIA...");
+  Serial.println("Aguardando i miss her...");
 }
 
 void loop() {
