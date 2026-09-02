@@ -10,7 +10,7 @@ sensor = ForceSensor(Port.B)
 
 radio = BLERadio(broadcast_channel=1)
 
-print("LETICIA PRONTA")
+print("HUB i miss her PRONTA")
 
 ultimo = False
 
