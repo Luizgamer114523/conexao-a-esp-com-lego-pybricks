@@ -165,14 +165,14 @@ void loop() {
 }
 
 resultado
-RSSI: -93
+MAC: c0:49:ef:54:9a:26
+RSSI: -95
 ==============================
 
 ==============================
 NOME: desconhecido
-MAC: 4c:1f:82:75:45:5a
-RSSI: -61
-MANUFACTURER DATA: 4C 00 10 07 3D 1F 38 71 AC 51 18 
-ASCII: L...=.8q.Q.
-TAMANHO: 11 bytes
+MAC: c4:39:8f:21:f4:b7
+RSSI: -98
 ==============================
+
+=======
