@@ -1,0 +1,166 @@
+
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+
+BLEScan *scan;
+
+// ============================================================
+// MOSTRA OS BYTES DO MANUFACTURER DATA
+// ============================================================
+
+void mostrarHex(String data) {
+
+  Serial.print("MANUFACTURER DATA: ");
+
+  for (int i = 0; i < data.length(); i++) {
+
+    uint8_t b = (uint8_t)data[i];
+
+    if (b < 0x10) {
+      Serial.print("0");
+    }
+
+    Serial.print(b, HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println();
+}
+
+
+// ============================================================
+// MOSTRA ASCII QUANDO POSSÍVEL
+// ============================================================
+
+void mostrarASCII(String data) {
+
+  Serial.print("ASCII: ");
+
+  for (int i = 0; i < data.length(); i++) {
+
+    uint8_t b = (uint8_t)data[i];
+
+    if (b >= 32 && b <= 126) {
+      Serial.print((char)b);
+    } else {
+      Serial.print(".");
+    }
+  }
+
+  Serial.println();
+}
+
+
+// ============================================================
+// CALLBACK BLE
+// ============================================================
+
+class Callback : public BLEAdvertisedDeviceCallbacks {
+
+  void onResult(BLEAdvertisedDevice device) override {
+
+    // Nome do dispositivo
+    Serial.println();
+    Serial.println("==============================");
+
+    if (device.haveName()) {
+      Serial.print("NOME: ");
+      Serial.println(device.getName().c_str());
+    } else {
+      Serial.println("NOME: desconhecido");
+    }
+
+    // MAC
+    Serial.print("MAC: ");
+    Serial.println(device.getAddress().toString().c_str());
+
+    // RSSI
+    Serial.print("RSSI: ");
+    Serial.println(device.getRSSI());
+
+    // Manufacturer Data
+    if (device.haveManufacturerData()) {
+
+      String data = device.getManufacturerData();
+
+      mostrarHex(data);
+      mostrarASCII(data);
+
+      Serial.print("TAMANHO: ");
+      Serial.print(data.length());
+      Serial.println(" bytes");
+
+      // ======================================================
+      // TENTA IDENTIFICAR PYBRICKS
+      // ======================================================
+
+      if (data.length() >= 3) {
+
+        if ((uint8_t)data[0] == 0x97 &&
+            (uint8_t)data[1] == 0x03) {
+
+          Serial.println(">>> POSSIVEL PACOTE PYBRICKS <<<");
+
+          Serial.print("CANAL: ");
+          Serial.println((uint8_t)data[2]);
+        }
+      }
+    }
+
+    Serial.println("==============================");
+  }
+};
+
+
+// ============================================================
+// SETUP
+// ============================================================
+
+void setup() {
+
+  Serial.begin(115200);
+
+  delay(1000);
+
+  Serial.println();
+  Serial.println("====================================");
+  Serial.println(" ESP32 BLE PYBRICKS ANALYZER");
+  Serial.println(" SPIKE ESSENTIAL");
+  Serial.println("====================================");
+
+  BLEDevice::init("ESP32_SCANNER");
+
+  scan = BLEDevice::getScan();
+
+  scan->setAdvertisedDeviceCallbacks(
+    new Callback(),
+    true
+  );
+
+  scan->setActiveScan(true);
+
+  scan->setInterval(100);
+  scan->setWindow(99);
+
+  Serial.println("Scanner iniciado...");
+  Serial.println("Agora ligue o SPIKE Essential.");
+}
+
+
+// ============================================================
+// LOOP
+// ============================================================
+
+void loop() {
+
+  Serial.println();
+  Serial.println(">>> ESCANEANDO BLE...");
+
+  scan->start(2, false);
+
+  scan->clearResults();
+
+  delay(200);
+}
+
