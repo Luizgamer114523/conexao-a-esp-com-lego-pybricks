@@ -29,3 +29,40 @@ while True:
     ultimo = pressionado
 
     wait(50)
+ Spike essential 
+from pybricks.hubs import EssentialHub
+from pybricks.pupdevices import ForceSensor
+from pybricks.parameters import Port
+from pybricks.messaging import BLERadio
+from pybricks.tools import wait
+
+# SPIKE Essential
+hub = EssentialHub()
+
+# Sensor de força na porta B
+sensor = ForceSensor(Port.B)
+
+# Canal BLE
+radio = BLERadio(broadcast_channel=1)
+
+print("SPIKE ESSENTIAL - BLE PRONTO")
+
+ultimo = False
+
+while True:
+    pressionado = sensor.pressed()
+
+    # Acabou de pressionar
+    if pressionado and not ultimo:
+        print("ON")
+        radio.broadcast("ON")
+
+    # Acabou de soltar
+    elif not pressionado and ultimo:
+        print("OFF")
+        radio.broadcast("OFF")
+
+    ultimo = pressionado
+
+    # Pybricks transmite no máximo aproximadamente a cada 100 ms
+    wait(100)
