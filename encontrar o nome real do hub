@@ -164,3 +164,15 @@ void loop() {
   delay(200);
 }
 
+resultado
+RSSI: -93
+==============================
+
+==============================
+NOME: desconhecido
+MAC: 4c:1f:82:75:45:5a
+RSSI: -61
+MANUFACTURER DATA: 4C 00 10 07 3D 1F 38 71 AC 51 18 
+ASCII: L...=.8q.Q.
+TAMANHO: 11 bytes
+==============================
