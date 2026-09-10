@@ -62,6 +62,65 @@ while True:
         print("OFF")
         radio.broadcast("OFF")
 
+from pybricks.hubs import EssentialHub
+from pybricks.pupdevices import Motor, UltrasonicSensor
+from pybricks.parameters import Port
+from pybricks.messaging import BLERadio
+from pybricks.tools import wait
+
+# ==================================================
+# SPIKE ESSENTIAL
+# ==================================================
+
+hub = EssentialHub()
+
+# Motor na porta A
+motor = Motor(Port.A)
+
+# Sensor ultrassônico na porta B
+sensor = UltrasonicSensor(Port.B)
+
+# BLE - canal 1
+radio = BLERadio(broadcast_channel=1)
+
+# Distância para detectar a mão
+LIMITE = 100  # 10 cm
+
+# Impede que o motor repita o movimento
+ativado = False
+
+print("SPIKE ESSENTIAL - PRONTO")
+
+while True:
+
+    distancia = sensor.distance()
+
+    print("Distancia:", distancia, "mm")
+
+    # ==================================================
+    # MÃO DETECTADA
+    # ==================================================
+
+    if distancia <= LIMITE and not ativado:
+
+        print("MAO DETECTADA!")
+
+        # Motor gira 280 graus para UM lado
+        motor.run_angle(500, 180)
+
+        # Motor para e permanece nessa posição
+        motor.stop()
+
+        # Envia ON para a ESP32
+        radio.broadcast("ON")
+
+        # Marca como já ativado
+        ativado = True
+
+    wait(100)
+
+
+
     ultimo = pressionado
 
     # Pybricks transmite no máximo aproximadamente a cada 100 ms
