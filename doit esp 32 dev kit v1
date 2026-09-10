@@ -66,3 +66,154 @@ void loop() {
   scan->clearResults();
   delay(100);
 }
+conexao com a essetial
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+#include <ESP32Servo.h>
+
+#define SERVO_PIN 18
+
+Servo servo;
+BLEScan *scan;
+
+// --------------------------------------------------
+// Mostra os bytes recebidos no Serial
+// --------------------------------------------------
+void printHex(String data) {
+  Serial.print("BLE: ");
+
+  for (int i = 0; i < data.length(); i++) {
+    uint8_t b = (uint8_t)data[i];
+
+    if (b < 0x10) {
+      Serial.print("0");
+    }
+
+    Serial.print(b, HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println();
+}
+
+// --------------------------------------------------
+// Callback BLE
+// --------------------------------------------------
+class Callback : public BLEAdvertisedDeviceCallbacks {
+
+  void onResult(BLEAdvertisedDevice device) override {
+
+    if (!device.haveManufacturerData()) {
+      return;
+    }
+
+    String data = device.getManufacturerData();
+
+    if (data.length() < 5) {
+      return;
+    }
+
+    // Mostra tudo que chegou
+    printHex(data);
+
+    // ------------------------------------------------
+    // Pybricks BLE Broadcast
+    //
+    // 97 03 = Pybricks
+    // 01    = canal 1
+    //
+    // String:
+    // A2 + tamanho/conteúdo
+    // ------------------------------------------------
+
+    if ((uint8_t)data[0] != 0x97) {
+      return;
+    }
+
+    if ((uint8_t)data[1] != 0x03) {
+      return;
+    }
+
+    // Canal BLE = 1
+    if ((uint8_t)data[2] != 0x01) {
+      return;
+    }
+
+    // ------------------------------------------------
+    // ON
+    // ------------------------------------------------
+    if (data.length() >= 6 &&
+        (uint8_t)data[3] == 0xA2 &&
+        (uint8_t)data[4] == 0x4F &&
+        (uint8_t)data[5] == 0x4E) {
+
+      Serial.println(">>> SPIKE ESSENTIAL: ON <<<");
+
+      servo.write(90);
+      return;
+    }
+
+    // ------------------------------------------------
+    // OFF
+    // ------------------------------------------------
+    if (data.length() >= 7 &&
+        (uint8_t)data[3] == 0xA3 &&
+        (uint8_t)data[4] == 0x4F &&
+        (uint8_t)data[5] == 0x46 &&
+        (uint8_t)data[6] == 0x46) {
+
+      Serial.println(">>> SPIKE ESSENTIAL: OFF <<<");
+
+      servo.write(0);
+      return;
+    }
+  }
+};
+
+// --------------------------------------------------
+// SETUP
+// --------------------------------------------------
+void setup() {
+
+  Serial.begin(115200);
+
+  Serial.println();
+  Serial.println("==============================");
+  Serial.println(" ESP32 + SPIKE ESSENTIAL BLE");
+  Serial.println("==============================");
+
+  // Servo
+  servo.attach(SERVO_PIN);
+  servo.write(0);
+
+  // BLE
+  BLEDevice::init("ESP32_SPIKE");
+
+  scan = BLEDevice::getScan();
+
+  scan->setAdvertisedDeviceCallbacks(
+    new Callback(),
+    true
+  );
+
+  scan->setActiveScan(true);
+
+  // Interval / Window
+  scan->setInterval(100);
+  scan->setWindow(99);
+
+  Serial.println("Aguardando SPIKE Essential...");
+}
+
+// --------------------------------------------------
+// LOOP
+// --------------------------------------------------
+void loop() {
+
+  scan->start(1, false);
+
+  scan->clearResults();
+
+  delay(50);
+}
