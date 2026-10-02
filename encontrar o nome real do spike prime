@@ -4,72 +4,106 @@
 
 BLEScan *scan;
 
-// =====================================================
+// ============================================================
+// MOSTRA HEX
+// ============================================================
+
+void mostrarHex(String data) {
+
+  Serial.print("MANUFACTURER DATA: ");
+
+  for (int i = 0; i < data.length(); i++) {
+
+    uint8_t b = (uint8_t)data[i];
+
+    if (b < 0x10) {
+      Serial.print("0");
+    }
+
+    Serial.print(b, HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println();
+}
+
+
+// ============================================================
 // CALLBACK
-// =====================================================
+// ============================================================
 
 class Callback : public BLEAdvertisedDeviceCallbacks {
 
   void onResult(BLEAdvertisedDevice device) override {
 
     Serial.println();
-    Serial.println("==============================");
+    Serial.println("========================================");
 
     // NOME
     if (device.haveName()) {
+
       Serial.print("NOME: ");
       Serial.println(device.getName().c_str());
+
     } else {
-      Serial.println("NOME: <sem nome>");
+
+      Serial.println("NOME: desconhecido");
     }
 
-    // ENDERECO
-    Serial.print("ENDERECO: ");
+    // MAC
+    Serial.print("MAC: ");
     Serial.println(device.getAddress().toString().c_str());
 
     // RSSI
     Serial.print("RSSI: ");
-    Serial.print(device.getRSSI());
-    Serial.println(" dBm");
+    Serial.println(device.getRSSI());
 
     // MANUFACTURER DATA
     if (device.haveManufacturerData()) {
 
-      std::string data = device.getManufacturerData();
+      String data = device.getManufacturerData();
 
-      Serial.print("HEX: ");
-
-      for (int i = 0; i < data.length(); i++) {
-
-        uint8_t b = (uint8_t)data[i];
-
-        if (b < 16) {
-          Serial.print("0");
-        }
-
-        Serial.print(b, HEX);
-        Serial.print(" ");
-      }
-
-      Serial.println();
+      mostrarHex(data);
 
       Serial.print("TAMANHO: ");
       Serial.print(data.length());
       Serial.println(" bytes");
 
+      // ------------------------------------------------------
+      // PROCURA PYBRICKS
+      // ------------------------------------------------------
+
+      if (data.length() >= 2) {
+
+        if ((uint8_t)data[0] == 0x97 &&
+            (uint8_t)data[1] == 0x03) {
+
+          Serial.println();
+          Serial.println("**************************************");
+          Serial.println("***      PYBRICKS ENCONTRADO!      ***");
+          Serial.println("**************************************");
+
+          if (data.length() >= 3) {
+
+            Serial.print("CANAL: ");
+            Serial.println((uint8_t)data[2]);
+          }
+        }
+      }
+
     } else {
 
-      Serial.println("HEX: <sem manufacturer data>");
+      Serial.println("MANUFACTURER DATA: nenhum");
     }
 
-    Serial.println("==============================");
+    Serial.println("========================================");
   }
 };
 
 
-// =====================================================
+// ============================================================
 // SETUP
-// =====================================================
+// ============================================================
 
 void setup() {
 
@@ -78,12 +112,13 @@ void setup() {
   delay(1000);
 
   Serial.println();
-  Serial.println("=================================");
-  Serial.println("      SCANNER BLE ESP32");
-  Serial.println("=================================");
+  Serial.println("========================================");
+  Serial.println("       ESP32 BLE SCANNER");
+  Serial.println("       SPIKE / PYBRICKS");
+  Serial.println("========================================");
   Serial.println();
 
-  BLEDevice::init("");
+  BLEDevice::init("ESP32_SCANNER");
 
   scan = BLEDevice::getScan();
 
@@ -101,18 +136,18 @@ void setup() {
 }
 
 
-// =====================================================
+// ============================================================
 // LOOP
-// =====================================================
+// ============================================================
 
 void loop() {
 
   Serial.println();
-  Serial.println(">>> PROCURANDO DISPOSITIVOS...");
+  Serial.println(">>> ESCANEANDO...");
 
-  scan->start(5, false);
+  scan->start(3, false);
 
   scan->clearResults();
 
-  delay(1000);
+  delay(300);
 }
