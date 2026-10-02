@@ -1,0 +1,264 @@
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+
+BLEScan *scan;
+
+// ============================================================
+// MOSTRA BYTES EM HEX
+// ============================================================
+
+void mostrarHex(const std::string &data) {
+
+  for (size_t i = 0; i < data.length(); i++) {
+
+    uint8_t b = (uint8_t)data[i];
+
+    if (b < 0x10)
+      Serial.print("0");
+
+    Serial.print(b, HEX);
+    Serial.print(" ");
+  }
+
+  Serial.println();
+}
+
+
+// ============================================================
+// MOSTRA BYTES EM ASCII
+// ============================================================
+
+void mostrarASCII(const std::string &data) {
+
+  for (size_t i = 0; i < data.length(); i++) {
+
+    uint8_t b = (uint8_t)data[i];
+
+    if (b >= 32 && b <= 126)
+      Serial.print((char)b);
+    else
+      Serial.print(".");
+  }
+
+  Serial.println();
+}
+
+
+// ============================================================
+// CALLBACK BLE
+// ============================================================
+
+class Callback : public BLEAdvertisedDeviceCallbacks {
+
+  void onResult(BLEAdvertisedDevice device) override {
+
+    Serial.println();
+    Serial.println("================================================");
+    Serial.println("              DISPOSITIVO BLE");
+    Serial.println("================================================");
+
+    // --------------------------------------------------------
+    // MAC
+    // --------------------------------------------------------
+
+    Serial.print("MAC: ");
+    Serial.println(
+      device.getAddress().toString().c_str()
+    );
+
+
+    // --------------------------------------------------------
+    // RSSI
+    // --------------------------------------------------------
+
+    Serial.print("RSSI: ");
+    Serial.print(device.getRSSI());
+    Serial.println(" dBm");
+
+
+    // --------------------------------------------------------
+    // NOME
+    // --------------------------------------------------------
+
+    if (device.haveName()) {
+
+      Serial.print("NOME: ");
+      Serial.println(device.getName().c_str());
+
+    } else {
+
+      Serial.println("NOME: <desconhecido>");
+    }
+
+
+    // --------------------------------------------------------
+    // MANUFACTURER DATA
+    // --------------------------------------------------------
+
+    if (device.haveManufacturerData()) {
+
+      std::string data =
+        device.getManufacturerData();
+
+      Serial.println();
+      Serial.println("--- MANUFACTURER DATA ---");
+
+      Serial.print("HEX: ");
+      mostrarHex(data);
+
+      Serial.print("ASCII: ");
+      mostrarASCII(data);
+
+      Serial.print("TAMANHO: ");
+      Serial.print(data.length());
+      Serial.println(" bytes");
+
+    } else {
+
+      Serial.println();
+      Serial.println("MANUFACTURER DATA: <nenhum>");
+    }
+
+
+    // --------------------------------------------------------
+    // SERVICE UUID
+    // --------------------------------------------------------
+
+    if (device.haveServiceUUID()) {
+
+      Serial.println();
+      Serial.println("--- SERVICE UUID ---");
+
+      int quantidade =
+        device.getServiceUUIDCount();
+
+      for (int i = 0; i < quantidade; i++) {
+
+        Serial.print("UUID: ");
+
+        Serial.println(
+          device.getServiceUUID(i).toString().c_str()
+        );
+      }
+
+    } else {
+
+      Serial.println();
+      Serial.println("SERVICE UUID: <nenhum>");
+    }
+
+
+    // --------------------------------------------------------
+    // TX POWER
+    // --------------------------------------------------------
+
+    if (device.haveTXPower()) {
+
+      Serial.print("TX POWER: ");
+      Serial.print(device.getTXPower());
+      Serial.println(" dBm");
+    }
+
+
+    // --------------------------------------------------------
+    // TENTATIVA DE IDENTIFICAÇÃO
+    // --------------------------------------------------------
+
+    bool possivelSPIKE = false;
+
+    if (device.haveName()) {
+
+      String nome = device.getName().c_str();
+
+      nome.toUpperCase();
+
+      if (nome.indexOf("SPIKE") >= 0 ||
+          nome.indexOf("LEGO") >= 0) {
+
+        possivelSPIKE = true;
+      }
+    }
+
+
+    if (possivelSPIKE) {
+
+      Serial.println();
+      Serial.println("****************************************");
+      Serial.println("*       POSSIVEL SPIKE PRIME           *");
+      Serial.println("****************************************");
+    }
+
+
+    Serial.println("================================================");
+  }
+};
+
+
+// ============================================================
+// SETUP
+// ============================================================
+
+void setup() {
+
+  Serial.begin(115200);
+
+  delay(1000);
+
+  Serial.println();
+  Serial.println();
+  Serial.println("==============================================");
+  Serial.println("        ESP32 SPIKE PRIME BLE SCANNER");
+  Serial.println("==============================================");
+  Serial.println();
+
+  BLEDevice::init("ESP32_SPIKE_SCANNER");
+
+  scan = BLEDevice::getScan();
+
+  scan->setAdvertisedDeviceCallbacks(
+    new Callback(),
+    true
+  );
+
+  // Scan ativo
+  scan->setActiveScan(true);
+
+  // Intervalo e janela
+  scan->setInterval(100);
+  scan->setWindow(99);
+
+  Serial.println("Scanner iniciado.");
+  Serial.println();
+  Serial.println("Ligue o SPIKE Prime.");
+  Serial.println("Coloque o Hub a 20-50 cm do ESP32.");
+  Serial.println();
+}
+
+
+// ============================================================
+// LOOP
+// ============================================================
+
+void loop() {
+
+  Serial.println();
+  Serial.println(">>> PROCURANDO SPIKE PRIME...");
+
+  // Escaneia durante 5 segundos
+  BLEScanResults *results =
+    scan->start(5, false);
+
+  Serial.println();
+  Serial.print("Dispositivos encontrados: ");
+
+  if (results != nullptr) {
+    Serial.println(results->getCount());
+  } else {
+    Serial.println("0");
+  }
+
+  scan->clearResults();
+
+  delay(500);
+}
